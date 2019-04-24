@@ -57,13 +57,23 @@ def get_endpoint():
     return 'https://{}/{}/'.format(app.current_request.context['domainName'], STAGE)
 
 
+def get_user_agent_from_context(ctxt):
+    try:
+        return ctxt['identity']['userAgent']
+    except IndexError:
+        log.debug("No User Agent!")
+        return None
+
+
 def do_auth_and_return(ctxt):
 
     log.debug('context: {}'.format(ctxt))
     here = ctxt['path']
     log.info("here will be {0}".format(here))
     redirect_here = quote_plus(here)
-    URS_URL = get_urs_url(ctxt, redirect_here)
+    redirect_url = 'https://{}/{}/login'.format(app.current_request.context['domainName'],
+                                                app.current_request.context['stage'])
+    URS_URL = get_urs_url(redirect_url, get_user_agent_from_context(app.current_request.context), redirect_here)
     log.info("Redirecting for auth: {0}".format(URS_URL))
     return Response(body='', status_code=302, headers={'Location': URS_URL})
 
@@ -175,7 +185,9 @@ def root():
         if os.getenv('MATURITY', '') == 'DEV':
             template_vars['profile'] = user_profile
     else:
-        template_vars['URS_URL'] = get_urs_url(app.current_request.context)
+        redirect_url = 'https://{}/{}/login'.format(app.current_request.context['domainName'],
+                                                    app.current_request.context['stage'])
+        template_vars['URS_URL'] = get_urs_url(redirect_url, get_user_agent_from_context(app.current_request.context))
 
     headers = {'Content-Type': 'text/html'}
     return make_html_response(template_vars, headers, 200, 'root.html')
@@ -185,7 +197,9 @@ def root():
 def logout():
 
     cookievars = get_cookie_vars(app.current_request.headers)
-    template_vars = {'title': 'Logged Out', 'URS_URL': get_urs_url(app.current_request.context)}
+    redirect_url = 'https://{}/{}/login'.format(app.current_request.context['domainName'],
+                                                app.current_request.context['stage'])
+    template_vars = {'title': 'Logged Out', 'URS_URL': get_urs_url(redirect_url, get_user_agent_from_context(app.current_request.context))}
 
     if cookievars:
         user_id = cookievars['urs-user-id']

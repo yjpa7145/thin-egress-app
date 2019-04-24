@@ -86,13 +86,13 @@ def get_log():
     return logger
 
 
-def get_urs_url(ctxt, to=False):
+def get_urs_url(redirect_url, download_agent=False, to=False):
 
     base_url = os.getenv('AUTH_BASE_URL', 'https://urs.earthdata.nasa.gov') + '/oauth/authorize'
 
     # From URS Application
-    client_id = get_urs_creds()['UrsId']
-    redirect_url = 'https://{}/{}/login'.format(ctxt['domainName'], ctxt['stage'])
+    client_id = get_urs_creds()['client_id']
+    #redirect_url = 'https://{}/{}/login'.format(ctxt['domainName'], ctxt['stage'])
     urs_url = '{0}?client_id={1}&response_type=code&redirect_uri={2}'.format(base_url, client_id, redirect_url)
     if to:
         urs_url += "&state={0}".format(to)
@@ -100,10 +100,7 @@ def get_urs_url(ctxt, to=False):
     # Try to handle scripts
     agent_pattern = re.compile('^(curl|wget|aria2|python)', re.IGNORECASE)
 
-    try:
-        download_agent = ctxt['identity']['userAgent']
-    except IndexError:
-        log.debug("No User Agent!")
+    if not download_agent:
         return urs_url
 
     if agent_pattern.match(download_agent):
