@@ -299,15 +299,16 @@ def try_download_head(bucket, filename):
         headers = {}
         return make_html_response(template_vars, headers, 404, 'error.html')
     log.debug(download)
-    #return 'Finish this thing'
 
     response_headers = {'Content-Type': download['ContentType']}
     for header in download['ResponseMetadata']['HTTPHeaders']:
-        name = header_map[header] if header in header_map else header
-        value = download['ResponseMetadata']['HTTPHeaders'][header] if header != 'server' else 'egress'
-        log.debug("setting header {0} to {1}.".format(name, value))
-        response_headers['name'] = value
-
+        if str(header).lower() in header_map:
+            name = header_map[header] if header in header_map else header
+            value = download['ResponseMetadata']['HTTPHeaders'][header] if header != 'server' else 'egress'
+            log.debug("setting header {0} to {1}.".format(name, value))
+            response_headers[name] = value
+        else:
+            log.debug('skipping header {}'.format(header))
     # response.headers.add('Content-Disposition', 'attachment; filename={0}'.format(filename))
     log.debug(response_headers)
     return Response(body='', headers=response_headers, status_code=200)
