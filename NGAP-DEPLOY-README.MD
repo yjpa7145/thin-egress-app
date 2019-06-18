@@ -1,4 +1,4 @@
-## Prepare  
+## Prepare
 
 ### Create a shortcut so we don't have to keep passing it in. Adjust as necessary. You could just set a DEFAULT awscli config.
 ```
@@ -14,7 +14,7 @@ Data in s3://sirc-ingest-dev-public will be addressable at https://endpoint/SIRC
 
 ```
 echo '
-MAP: 
+MAP:
    SIRC:
       BROWSE:   public
       SLC:      protected
@@ -22,7 +22,7 @@ MAP:
       METADATA: protected
 
 PUBLIC_BUCKETS:
-   -  public' > /tmp/public_bucket.yaml 
+   -  public' > /tmp/public_bucket.yaml
 ```
 
 ### Upload bucketmap to internal bucket.
@@ -52,12 +52,14 @@ export CF_TEMPLATE=$(aws $AWSENV s3api list-objects --bucket asf.public.code --p
 
 ## Deploy!
 
-### Create the stack stack.  
+### Create the stack stack.
 
 Unfortunately, the aws cli command `aws cloudformation deploy` doesn't work with template-url, so do it the hard way.
 
-This will deploy the latest codebase, currently: ![Last Release](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fs3.amazonaws.com%2Fasf.public.code%2Fthin-egress-app%2Flastrelease.json). Alternatively, you can select a Cloudformation template from [ASF's Public Code](https://s3.amazonaws.com/asf.public.code/index.html) bucket. 
+This will deploy the latest codebase, currently: ![Last Release](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fs3.amazonaws.com%2Fasf.public.code%2Fthin-egress-app%2Flastrelease.json). Alternatively, you can select a Cloudformation template from [ASF's Public Code](https://s3.amazonaws.com/asf.public.code/index.html) bucket.
 
+⚠️ Note: When deploying to NGAP, this `create-stack` command must be run using
+NGAPShNonProdRole credentials.  Deploying with developer credentials will fail.
 
 ```
 aws cloudformation create-stack $AWSENV \
@@ -73,10 +75,10 @@ aws cloudformation create-stack $AWSENV \
        ParameterKey=VPCSecurityGroupIDs,ParameterValue=$SECURITYGROUP \
        ParameterKey=VPCSubnetIDs,ParameterValue=$SUBNETID \
        ParameterKey=StageName,ParameterValue=DEV \
-       ParameterKey=HtmlTemplateDir,ParameterValue= 
+       ParameterKey=HtmlTemplateDir,ParameterValue=
 ```
 
-### Wait for completion. 
+### Wait for completion.
 ```
 aws cloudformation wait stack-create-complete $AWSENV --stack-name sirc-tea
 ```
@@ -89,7 +91,7 @@ aws cloudformation $AWSENV describe-stacks --stack-name sirc-tea --query "Stacks
 ### ACTION: Take the value from the above output and add it as redirect_uri in your URS App.
 
 ## Validate that the deployment worked!
- 
+
 ###  Grab the API URL & Bastion DNS Name.
 ```
 export API_URL=$(aws cloudformation $AWSENV describe-stacks --stack-name sirc-tea --query "Stacks[0].Outputs[?OutputKey=='ApiEndpoint'].{ID:OutputValue}[0]" --output=text)
